@@ -46,7 +46,7 @@ const lessons = sqliteTable('lessons', {
 });
 
 // 授業と教師の関係
-const teacher_lessons = relations(lessons, ({ one }) => ({
+const one_teacher_many_lessons = relations(lessons, ({ one }) => ({
 	teacher_lessons: one(teachers, {
 		fields: [lessons.teacher_uuid],
 		references: [teachers.teacher_uuid],
@@ -115,7 +115,7 @@ export {
 	lessons,
 	attendances,
 	join_lessons,
-	teacher_lessons,
+	one_teacher_many_lessons as teacher_lessons,
 	student_join_lessons,
 	lesson_join_lessons,
 	student_attendances,

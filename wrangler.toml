@@ -5,8 +5,8 @@ compatibility_date = "2023-10-30"
 [[d1_databases]]
 binding = "DB" # i.e. available in your Worker on env.DB
 database_name = "pbl-db"
-database_id = "1a09d461-f74c-4365-8e8a-5cd619c15b55"
+database_id = "ae09415c-25c0-4780-b64b-a69546f3f8ea"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "b049d4bcbad84744b54dbeccec98b0b2"
+id = "0353bc1ada254815a5c8f697e87d7284"

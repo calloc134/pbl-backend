@@ -636,7 +636,7 @@ app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
 		});
 	});
 
-	// 出席した生徒のリストを取得する
+	// 出席したことを登録する
 	const result = await db
 		.update(attendance)
 		.set({ status: 1 })

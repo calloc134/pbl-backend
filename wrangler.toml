@@ -10,3 +10,6 @@ database_id = "5ac4728c-b2ab-477f-bbee-0c9bfc1ba7f9"
 [[kv_namespaces]]
 binding = "KV"
 id = "0353bc1ada254815a5c8f697e87d7284"
+
+[triggers]
+crons = ["*/1 * * * *"]

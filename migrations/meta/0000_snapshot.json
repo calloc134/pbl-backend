@@ -1,11 +1,11 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "a0562ff7-80b4-4867-91f1-91b742e11e80",
+  "id": "b97b0226-a2a1-4460-b920-750e8ac4229d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "attendances": {
-      "name": "attendances",
+    "attendance": {
+      "name": "attendance",
       "columns": {
         "attendance_uuid": {
           "name": "attendance_uuid",
@@ -38,10 +38,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "attendances_student_uuid_students_student_uuid_fk": {
-          "name": "attendances_student_uuid_students_student_uuid_fk",
-          "tableFrom": "attendances",
-          "tableTo": "students",
+        "attendance_student_uuid_student_student_uuid_fk": {
+          "name": "attendance_student_uuid_student_student_uuid_fk",
+          "tableFrom": "attendance",
+          "tableTo": "student",
           "columnsFrom": [
             "student_uuid"
           ],
@@ -51,67 +51,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "attendances_lesson_uuid_lessons_lesson_uuid_fk": {
-          "name": "attendances_lesson_uuid_lessons_lesson_uuid_fk",
-          "tableFrom": "attendances",
-          "tableTo": "lessons",
-          "columnsFrom": [
-            "lesson_uuid"
-          ],
-          "columnsTo": [
-            "lesson_uuid"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "join_lessons": {
-      "name": "join_lessons",
-      "columns": {
-        "join_lesson_uuid": {
-          "name": "join_lesson_uuid",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "student_uuid": {
-          "name": "student_uuid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "lesson_uuid": {
-          "name": "lesson_uuid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "join_lessons_student_uuid_students_student_uuid_fk": {
-          "name": "join_lessons_student_uuid_students_student_uuid_fk",
-          "tableFrom": "join_lessons",
-          "tableTo": "students",
-          "columnsFrom": [
-            "student_uuid"
-          ],
-          "columnsTo": [
-            "student_uuid"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "join_lessons_lesson_uuid_lessons_lesson_uuid_fk": {
-          "name": "join_lessons_lesson_uuid_lessons_lesson_uuid_fk",
-          "tableFrom": "join_lessons",
-          "tableTo": "lessons",
+        "attendance_lesson_uuid_lesson_lesson_uuid_fk": {
+          "name": "attendance_lesson_uuid_lesson_lesson_uuid_fk",
+          "tableFrom": "attendance",
+          "tableTo": "lesson",
           "columnsFrom": [
             "lesson_uuid"
           ],
@@ -125,8 +68,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "lessons": {
-      "name": "lessons",
+    "lesson": {
+      "name": "lesson",
       "columns": {
         "lesson_uuid": {
           "name": "lesson_uuid",
@@ -160,10 +103,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "lessons_teacher_uuid_teachers_teacher_uuid_fk": {
-          "name": "lessons_teacher_uuid_teachers_teacher_uuid_fk",
-          "tableFrom": "lessons",
-          "tableTo": "teachers",
+        "lesson_teacher_uuid_teacher_teacher_uuid_fk": {
+          "name": "lesson_teacher_uuid_teacher_teacher_uuid_fk",
+          "tableFrom": "lesson",
+          "tableTo": "teacher",
           "columnsFrom": [
             "teacher_uuid"
           ],
@@ -177,8 +120,65 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "students": {
-      "name": "students",
+    "regilesson": {
+      "name": "regilesson",
+      "columns": {
+        "regilesson_uuid": {
+          "name": "regilesson_uuid",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "student_uuid": {
+          "name": "student_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lesson_uuid": {
+          "name": "lesson_uuid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "regilesson_student_uuid_student_student_uuid_fk": {
+          "name": "regilesson_student_uuid_student_student_uuid_fk",
+          "tableFrom": "regilesson",
+          "tableTo": "student",
+          "columnsFrom": [
+            "student_uuid"
+          ],
+          "columnsTo": [
+            "student_uuid"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "regilesson_lesson_uuid_lesson_lesson_uuid_fk": {
+          "name": "regilesson_lesson_uuid_lesson_lesson_uuid_fk",
+          "tableFrom": "regilesson",
+          "tableTo": "lesson",
+          "columnsFrom": [
+            "lesson_uuid"
+          ],
+          "columnsTo": [
+            "lesson_uuid"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "student": {
+      "name": "student",
       "columns": {
         "student_uuid": {
           "name": "student_uuid",
@@ -210,15 +210,15 @@
         }
       },
       "indexes": {
-        "students_student_id_unique": {
-          "name": "students_student_id_unique",
+        "student_student_id_unique": {
+          "name": "student_student_id_unique",
           "columns": [
             "student_id"
           ],
           "isUnique": true
         },
-        "students_device_id_unique": {
-          "name": "students_device_id_unique",
+        "student_device_id_unique": {
+          "name": "student_device_id_unique",
           "columns": [
             "device_id"
           ],
@@ -229,8 +229,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "teachers": {
-      "name": "teachers",
+    "teacher": {
+      "name": "teacher",
       "columns": {
         "teacher_uuid": {
           "name": "teacher_uuid",
@@ -255,8 +255,8 @@
         }
       },
       "indexes": {
-        "teachers_teacher_id_unique": {
-          "name": "teachers_teacher_id_unique",
+        "teacher_teacher_id_unique": {
+          "name": "teacher_teacher_id_unique",
           "columns": [
             "teacher_id"
           ],

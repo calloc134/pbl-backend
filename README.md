@@ -18,7 +18,19 @@ https://pbl-gairon-test.calloc134personal.workers.dev
 
 test.ipynb で python によるテストを行うことができます。
 
+## 利用技術
+
+- Cloudflare Workers
+- Hono
+- Drizzle ORM
+- Cloudflare D1
+- Cloudflare KV
+- bcrypt-js
+- ulidx
+
 ## 今後の展望
 
-- ログインの実装
-- フロントエンドの実装
+- バリデーションの追加
+- スキーマ定義？
+- テストの追加？
+- ファイル分割とディレクトリ構成の変更

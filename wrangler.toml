@@ -1,11 +1,12 @@
 name = "pbl-gairon-test"
 main = "src/index.ts"
 compatibility_date = "2023-10-30"
+compatibility_flags = [ "nodejs_compat" ]
 
 [[d1_databases]]
 binding = "DB" # i.e. available in your Worker on env.DB
 database_name = "pbl-db"
-database_id = "5ac4728c-b2ab-477f-bbee-0c9bfc1ba7f9"
+database_id = "af8fdeea-d678-4c4d-bef8-4d3612fd550f"
 
 [[kv_namespaces]]
 binding = "KV"

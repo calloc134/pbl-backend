@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "b97b0226-a2a1-4460-b920-750e8ac4229d",
+  "id": "468bef8e-e0da-4dfa-aa58-9367d1259897",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "attendance": {
@@ -207,6 +207,20 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -221,6 +235,13 @@
           "name": "student_device_id_unique",
           "columns": [
             "device_id"
+          ],
+          "isUnique": true
+        },
+        "student_email_unique": {
+          "name": "student_email_unique",
+          "columns": [
+            "email"
           ],
           "isUnique": true
         }
@@ -248,6 +269,13 @@
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "password": {
+          "name": "password",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

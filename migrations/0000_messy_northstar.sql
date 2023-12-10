@@ -27,15 +27,19 @@ CREATE TABLE `student` (
 	`student_uuid` text PRIMARY KEY NOT NULL,
 	`student_id` integer NOT NULL,
 	`device_id` text NOT NULL,
-	`name` text NOT NULL
+	`name` text NOT NULL,
+	`email` text NOT NULL,
+	`password` text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `teacher` (
 	`teacher_uuid` text PRIMARY KEY NOT NULL,
 	`teacher_id` integer NOT NULL,
-	`name` text NOT NULL
+	`name` text NOT NULL,
+	`password` text NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `student_student_id_unique` ON `student` (`student_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `student_device_id_unique` ON `student` (`device_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `student_email_unique` ON `student` (`email`);--> statement-breakpoint
 CREATE UNIQUE INDEX `teacher_teacher_id_unique` ON `teacher` (`teacher_id`);

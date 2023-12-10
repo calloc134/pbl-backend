@@ -9,6 +9,8 @@ const student = sqliteTable('student', {
 	student_id: integer('student_id').notNull().unique(),
 	device_id: text('device_id').notNull().unique(),
 	name: text('name').notNull(),
+	email: text('email').notNull().unique(),
+	password_hash: text('password').notNull(),
 });
 
 // テーブル名: teacher
@@ -17,6 +19,7 @@ const teacher = sqliteTable('teacher', {
 	teacher_uuid: text('teacher_uuid').primaryKey().notNull(),
 	teacher_id: integer('teacher_id').notNull().unique(),
 	name: text('name').notNull(),
+	password_hash: text('password').notNull(),
 });
 
 // テーブル名: lesson

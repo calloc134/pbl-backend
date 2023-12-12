@@ -568,11 +568,35 @@ app_hono.get('/teachers/:teacher_uuid', async (c) => {
 
 // [認証教師] 授業を追加する
 app_hono.post('/lessons', async (c) => {
+	const payload = c.get('jwtPayload') as JWTPayload;
+
+	if (payload.type !== 'teacher') {
+		console.debug('[!] ログインユーザが教師ではありません。');
+		return c.json(
+			{
+				error: 'ログインユーザが教師ではありません',
+			},
+			403
+		);
+	}
+
+	if (!payload.teacher_uuid) {
+		console.debug('[!] 教師が存在しません。');
+		return c.json(
+			{
+				error: '教師が存在しません',
+			},
+			403
+		);
+	}
+
+	// ログイン教師のUUIDを取得する
+	const teacher_uuid = payload.teacher_uuid;
+
 	const db = drizzle(c.env.DB);
 
-	const { name, teacher_uuid } = await c.req.json<{
+	const { name } = await c.req.json<{
 		name: string;
-		teacher_uuid: string;
 	}>();
 
 	// UUIDを生成する
@@ -930,10 +954,34 @@ app_hono.get('/lessons/:lesson_uuid/attendances', async (c) => {
 
 // [認証生徒] 授業に参加する
 app_hono.post('/join-lessons', async (c) => {
+	const payload = c.get('jwtPayload') as JWTPayload;
+
+	if (payload.type !== 'student') {
+		console.debug('[!] ログインユーザが生徒ではありません。');
+		return c.json(
+			{
+				error: 'ログインユーザが生徒ではありません',
+			},
+			403
+		);
+	}
+
+	if (!payload.student_uuid) {
+		console.debug('[!] 生徒が存在しません。');
+		return c.json(
+			{
+				error: '生徒が存在しません',
+			},
+			403
+		);
+	}
+
+	// ログイン生徒のUUIDを取得する
+	const student_uuid = payload.student_uuid;
+
 	const db = drizzle(c.env.DB);
 
-	const { student_uuid, lesson_uuid } = await c.req.json<{
-		student_uuid: string;
+	const { lesson_uuid } = await c.req.json<{
 		lesson_uuid: string;
 	}>();
 

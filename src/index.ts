@@ -12,11 +12,12 @@ import {
 	regilesson_relation,
 	attendance_relation,
 } from './schema';
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import { ulid } from 'ulidx';
 import { jwt, sign } from 'hono/jwt';
 import { cors } from 'hono/cors';
 import { compare, genSalt, hash } from 'bcryptjs';
+import { sendAttendeeEmail } from './util';
 import { allow_path_list, student_path_list, teacher_path_list } from './path_list';
 
 type Bindings = {
@@ -979,7 +980,11 @@ app_hono.post('/join-lessons', async (c) => {
 	// ログイン生徒のUUIDを取得する
 	const student_uuid = payload.student_uuid;
 
-	const db = drizzle(c.env.DB);
+	const db = drizzle(c.env.DB, {
+		schema: {
+			lesson: lesson,
+		},
+	});
 
 	const { lesson_uuid } = await c.req.json<{
 		lesson_uuid: string;
@@ -987,6 +992,35 @@ app_hono.post('/join-lessons', async (c) => {
 
 	// UUIDを生成する
 	const regilesson_ulid = ulid();
+
+	// 該当する授業が存在するか確認する
+	const lesson_detail = await db.query.lesson.findFirst({
+		where: eq(lesson.lesson_uuid, lesson_uuid),
+		columns: {
+			status: true,
+		},
+	});
+
+	if (!lesson_detail) {
+		console.debug('[!] 授業が存在しません。');
+		return c.json(
+			{
+				error: '授業が存在しません',
+			},
+			404
+		);
+	}
+
+	// 授業が開講前でないときはエラーを返す
+	if (lesson_detail.status !== 0) {
+		console.debug('[!] 授業が開講前ではありません。');
+		return c.json(
+			{
+				error: '授業が開講前ではありません',
+			},
+			403
+		);
+	}
 
 	// データベースに履修を登録する
 	const result = await db.insert(regilesson).values({ regilesson_uuid: regilesson_ulid, student_uuid, lesson_uuid });
@@ -1011,14 +1045,16 @@ app_hono.post('/join-lessons', async (c) => {
 });
 
 // [認証教師] 特定の授業を開始する
-app_hono.post('/lessons/:lesson_uuid/start', async (c) => {
+app_hono.post('/lessons/start', async (c) => {
 	const db = drizzle(c.env.DB, {
 		schema: {
 			lesson: lesson,
 			regilesson: regilesson,
 		},
 	});
-	const lesson_uuid = c.req.param().lesson_uuid;
+	const { lesson_uuid } = await c.req.json<{
+		lesson_uuid: string;
+	}>();
 
 	// まず、JWTのペイロードを取得する
 	const payload = c.get('jwtPayload') as JWTPayload;
@@ -1049,6 +1085,7 @@ app_hono.post('/lessons/:lesson_uuid/start', async (c) => {
 		columns: {
 			lesson_uuid: true,
 			teacher_uuid: true,
+			status: true,
 		},
 	});
 
@@ -1068,6 +1105,17 @@ app_hono.post('/lessons/:lesson_uuid/start', async (c) => {
 		return c.json(
 			{
 				error: '自身が担当していない授業です',
+			},
+			403
+		);
+	}
+
+	// すでに開始している授業の場合はエラーを返す
+	if (lesson_detail.status !== 0) {
+		console.debug('[!] すでに開始している授業です。');
+		return c.json(
+			{
+				error: 'すでに開始している授業です',
 			},
 			403
 		);
@@ -1098,30 +1146,36 @@ app_hono.post('/lessons/:lesson_uuid/start', async (c) => {
 		},
 	});
 
-	console.debug('[*] 当該授業に履修している生徒のリスト', student_list);
+	if (student_list.length !== 0) {
+		console.debug('[*] 当該授業に履修している生徒のリスト', student_list);
 
-	// 出席テーブルに追加する
-	const attendance_list = student_list.map((student) => {
-		return {
-			attendance_uuid: ulid(),
-			student_uuid: student.student_uuid,
-			lesson_uuid: lesson_uuid,
-			status: 0,
-		};
-	});
+		// 出席テーブルに追加するデータの生成
+		const attendance_list = student_list.map((student) => {
+			return {
+				attendance_uuid: ulid(),
+				student_uuid: student.student_uuid,
+				lesson_uuid: lesson_uuid,
+				status: 0,
+			};
+		});
 
-	console.debug('[*] 出席テーブルに追加するデータ', attendance_list);
+		console.debug('[*] 出席テーブルに追加するデータ', attendance_list);
 
-	await db.insert(attendance).values(attendance_list).execute();
+		// もし生徒がいれば出席テーブルを作成
 
-	if (result.error) {
-		console.error('[!] 出席テーブルの初期化に失敗しました。', result.error);
-		return c.json(
-			{
-				error: '出席テーブルの初期化に失敗しました',
-			},
-			400
-		);
+		console.debug('[*] 出席テーブルを初期化します。');
+
+		await db.insert(attendance).values(attendance_list).execute();
+
+		if (result.error) {
+			console.error('[!] 出席テーブルの初期化に失敗しました。', result.error);
+			return c.json(
+				{
+					error: '出席テーブルの初期化に失敗しました',
+				},
+				400
+			);
+		}
 	}
 
 	return c.json({
@@ -1189,7 +1243,7 @@ app_hono.post('/attendances-endpoint', async (c) => {
 });
 
 // [認証教師] 特定の授業を終了する
-app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
+app_hono.post('/lessons/end', async (c) => {
 	const db = drizzle(c.env.DB, {
 		schema: {
 			regilesson: regilesson,
@@ -1200,10 +1254,9 @@ app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
 		},
 	});
 
-	// ここでも授業終了の認可を実装しようと思ったが、とりあえず放置
-	// 要件的に必要になったら授業開始と同じように実装する
-
-	const lesson_uuid = c.req.param().lesson_uuid;
+	const { lesson_uuid } = await c.req.json<{
+		lesson_uuid: string;
+	}>();
 
 	// キーバリューストアからデバイスIDのリストを取得する
 	console.debug('[*] キーバリューストアからデバイスIDのリストを取得します。');
@@ -1261,28 +1314,30 @@ app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
 
 	console.debug('[*] 今回出席した生徒のリスト', student_attendance_list);
 
-	// 出席したことを登録する
-	const result = await db
-		.update(attendance)
-		.set({ status: 1 })
-		.where(or(...student_attendance_list.map((student) => eq(attendance.student_uuid, student.student.student_uuid))))
-		.execute();
+	// もし出席した生徒がいれば出席テーブルを更新する
 
-	if (result.error) {
-		console.error('[!] 出席の登録に失敗しました。', result.error);
-		return c.json(
-			{
-				error: '出席の登録に失敗しました',
-			},
-			400
-		);
-	}
+	if (student_attendance_list.length !== 0) {
+		// 出席したことを登録する
+		const result = await db
+			.update(attendance)
+			.set({ status: 1 })
+			.where(
+				inArray(
+					attendance.student_uuid,
+					student_attendance_list.map((student) => student.student.student_uuid)
+				)
+			)
+			.execute();
 
-	// キーバリューストアからデバイスIDのリストを削除する
-	for (const device_id of device_id_list) {
-		const attendance_key = `attendance:${lesson_uuid}:${device_id.name}`;
-		console.debug('[*] 出席情報のキー', attendance_key);
-		await c.env.KV.delete(attendance_key);
+		if (result.error) {
+			console.error('[!] 出席の登録に失敗しました。', result.error);
+			return c.json(
+				{
+					error: '出席の登録に失敗しました',
+				},
+				400
+			);
+		}
 	}
 
 	// ここまではバッチ処理と同じ処理であり、他の悪意ある教師によってリクエストされても許容される処理内容である
@@ -1316,6 +1371,7 @@ app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
 		columns: {
 			lesson_uuid: true,
 			teacher_uuid: true,
+			status: true,
 		},
 	});
 
@@ -1340,6 +1396,25 @@ app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
 		);
 	}
 
+	// 現在開講されていない場合はエラーを返す
+	if (lesson_detail.status !== 1) {
+		console.debug('[!] 現在開講されていない授業です。');
+		return c.json(
+			{
+				error: '現在開講されていない授業です',
+			},
+			403
+		);
+	}
+
+	// 授業が終了するので、キーバリューストアからデバイスIDのリストを削除する
+	// キーバリューストアからデバイスIDのリストを削除する
+	for (const device_id of device_id_list) {
+		const attendance_key = `attendance:${lesson_uuid}:${device_id.name}`;
+		console.debug('[*] 出席情報のキー', attendance_key);
+		await c.env.KV.delete(attendance_key);
+	}
+
 	// 授業の状態を終了に変更する
 	const result_lesson = await db.update(lesson).set({ status: 2 }).where(eq(lesson.lesson_uuid, lesson_uuid)).execute();
 
@@ -1353,34 +1428,44 @@ app_hono.post('/lessons/:lesson_uuid/end', async (c) => {
 		);
 	}
 
-	// 今回該当する生徒のリストを取得する
-	const student_nortification_list = await db.query.student.findMany({
-		where: or(...student_attendance_list.map((attend_student) => eq(student.student_uuid, attend_student.student.student_uuid))),
-		columns: {
-			email: true,
-		},
-	});
+	// すでに出席していた生徒と、今回出席した生徒のリストを結合
+	const student_nortification_list = student_attendance_list
+		.map((student) => student.student.student_uuid)
+		.concat(student_attendance_list.map((student) => student.student.student_uuid));
 
-	// それぞれemailを送信する
-	for (const student of student_nortification_list) {
-		const email = student.email;
-		const result = await fetch('https://api.resend.com/emails', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
+	// もし生徒がいればメール送信処理を行う
+	if (student_nortification_list.length !== 0) {
+		// 今回該当する生徒のリストを取得する
+		const student_email_list = await db.query.student.findMany({
+			where: inArray(student.student_uuid, student_nortification_list),
+			columns: {
+				email: true,
 			},
-			body: JSON.stringify({
-				from: 'calloc134 <calloc134@calloc.tech>',
-				to: [email],
-				subject: '出席が完了しました',
-				text: '出席が完了しました',
-			}),
 		});
 
-		if (result.status !== 200) {
-			console.error('[!] メールの送信に失敗しました。');
-			console.error(await result.text());
+		console.debug('[*] 今回該当する生徒のリスト', student_nortification_list);
+
+		// それぞれemailを送信する
+		for (const student of student_email_list) {
+			const email = student.email;
+			const result = await fetch('https://api.resend.com/emails', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
+				},
+				body: JSON.stringify({
+					from: 'calloc134 <calloc134@calloc.tech>',
+					to: [email],
+					subject: '出席が完了しました',
+					text: '出席が完了しました',
+				}),
+			});
+
+			if (result.status !== 200) {
+				console.error('[!] メールの送信に失敗しました。');
+				console.error(await result.text());
+			}
 		}
 	}
 
@@ -1478,37 +1563,51 @@ const scheduled = async (_: ScheduledEvent, env: Bindings, __: ExecutionContext)
 
 		console.debug('[*] 今回出席した生徒のリスト', student_attendance_list);
 
-		// 出席した生徒のリストを取得する
-		const result = await db
-			.update(attendance)
-			.set({ status: 1 })
-			.where(or(...student_attendance_list.map((student) => eq(attendance.student_uuid, student.student.student_uuid))))
-			.execute();
+		// もし出席した生徒がいれば出席テーブルを更新する
+		if (student_attendance_list.length !== 0) {
+			// 出席した生徒のリストを取得する
+			const result = await db
+				.update(attendance)
+				.set({ status: 1 })
+				.where(
+					inArray(
+						attendance.student_uuid,
+						student_attendance_list.map((student) => student.student.student_uuid)
+					)
+				)
+				.execute();
 
-		if (result.error) {
-			console.error('[!] 出席の登録に失敗しました。', result.error);
+			if (result.error) {
+				console.error('[!] 出席の登録に失敗しました。', result.error);
+			}
 		}
 
-		// 今回該当する生徒のリストを取得する
-		const student_nortification_list = await db.query.student.findMany({
-			where: or(...student_attendance_list.map((attend_student) => eq(student.student_uuid, attend_student.student.student_uuid))),
-			columns: {
-				email: true,
-			},
-		});
+		const student_nortification_list = student_attendance_list.map((student) => student.student.student_uuid);
 
-		// それぞれemailを送信する
-		for (const student of student_nortification_list) {
-			const result = await sendAttendeeEmail({
-				to: student.email,
-				resend_api_key: env.RESEND_API_KEY,
+		if (student_nortification_list.length !== 0) {
+			// 今回該当する生徒のリストを取得する
+			const student_email_list = await db.query.student.findMany({
+				where: inArray(student.student_uuid, student_nortification_list),
+				columns: {
+					email: true,
+				},
 			});
 
-			if (!result) {
-				console.error('[!] メールの送信に失敗しました。');
-			}
+			console.debug('[*] 今回該当する生徒のリスト', student_email_list);
 
-			console.debug('[*] メールの送信に成功しました。');
+			// それぞれemailを送信する
+			for (const student of student_email_list) {
+				const result = await sendAttendeeEmail({
+					to: student.email,
+					resend_api_key: env.RESEND_API_KEY,
+				});
+
+				if (!result) {
+					console.error('[!] メールの送信に失敗しました。');
+				}
+
+				console.debug('[*] メールの送信に成功しました。');
+			}
 		}
 	}
 };

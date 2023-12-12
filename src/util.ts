@@ -19,3 +19,5 @@ const sendAttendeeEmail = async ({ to, resend_api_key }: { to: string; resend_ap
 
 	return true;
 };
+
+export { sendAttendeeEmail };

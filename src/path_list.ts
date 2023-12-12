@@ -100,11 +100,11 @@ const teacher_path_list = [
 		method: 'GET',
 	},
 	{
-		path: '/lessons/:lesson_uuid/start',
+		path: '/lessons/start',
 		method: 'POST',
 	},
 	{
-		path: '/lessons/:lesson_uuid/end',
+		path: '/lessons/end',
 		method: 'POST',
 	},
 ];

@@ -1613,8 +1613,6 @@ const scheduled = async (_: ScheduledEvent, env: Bindings, __: ExecutionContext)
 				if (!result) {
 					console.error('[!] メールの送信に失敗しました。');
 				}
-
-				console.debug('[*] メールの送信に成功しました。');
 			}
 		}
 	}

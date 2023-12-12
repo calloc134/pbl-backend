@@ -95,9 +95,13 @@ const teacher_path_list = [
 		path: '/students/:student_uuid/attendances',
 		method: 'GET',
 	},
+	// {
+	// 	path: '/lessons/:lesson_uuid/attendances',
+	// 	method: 'GET',
+	// },
 	{
-		path: '/lessons/:lesson_uuid/attendances',
-		method: 'GET',
+		path: '/lessons/particular/attendances',
+		method: 'POST',
 	},
 	{
 		path: '/lessons/start',

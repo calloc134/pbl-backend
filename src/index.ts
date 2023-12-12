@@ -886,7 +886,8 @@ app_hono.get('/students/me/attendances', async (c) => {
 });
 
 // [認証教師] 特定の生徒の出席状況を取得する
-app_hono.get('/students/:student_uuid/attendances', async (c) => {
+// 変なエンドポイントになりました、ごめんなさい
+app_hono.get('/students/particular/attendances', async (c) => {
 	const db = drizzle(c.env.DB, {
 		schema: {
 			attendance: attendance,
@@ -898,7 +899,10 @@ app_hono.get('/students/:student_uuid/attendances', async (c) => {
 		},
 	});
 
-	const student_uuid = c.req.param().student_uuid;
+	const { student_uuid } = await c.req.json<{
+		student_uuid: string;
+	}>();
+
 	const result = await db.query.attendance.findMany({
 		where: eq(attendance.student_uuid, student_uuid),
 		columns: {
@@ -923,7 +927,7 @@ app_hono.get('/students/:student_uuid/attendances', async (c) => {
 });
 
 // [認証教師] 特定の授業の出席状況を取得する
-app_hono.get('/lessons/:lesson_uuid/attendances', async (c) => {
+app_hono.post('/lessons/particular/attendances', async (c) => {
 	const db = drizzle(c.env.DB, {
 		schema: {
 			attendance: attendance,
@@ -932,7 +936,10 @@ app_hono.get('/lessons/:lesson_uuid/attendances', async (c) => {
 		},
 	});
 
-	const lesson_uuid = c.req.param().lesson_uuid;
+	const { lesson_uuid } = await c.req.json<{
+		lesson_uuid: string;
+	}>();
+
 	const result = await db.query.attendance.findMany({
 		where: eq(attendance.lesson_uuid, lesson_uuid),
 		columns: {
@@ -1505,6 +1512,7 @@ const scheduled = async (_: ScheduledEvent, env: Bindings, __: ExecutionContext)
 
 	// 授業毎に出席状況を更新する
 	for (const lesson of lesson_list) {
+		console.debug('[*] 授業のUUID', lesson.lesson_uuid);
 		const lesson_uuid = lesson.lesson_uuid;
 
 		// キーバリューストアからデバイスIDのリストを取得する

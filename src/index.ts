@@ -1244,7 +1244,7 @@ app_hono.post('/attendances-endpoint', async (c) => {
 
 		// すでに存在しているかを確認
 		if ((await c.env.KV.get(attendance_key)) !== null) {
-			console.debug('[*] すでに出席済みです。');
+			console.debug('[*] すでに登録済です。');
 			continue;
 		}
 

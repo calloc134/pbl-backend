@@ -1241,6 +1241,13 @@ app_hono.post('/attendances-endpoint', async (c) => {
 	for (const device_id of device_ids) {
 		const attendance_key = `attendance:${lesson_uuid}:${device_id}`;
 		console.debug('[*] 出席情報のキー', attendance_key);
+
+		// すでに存在しているかを確認
+		if ((await c.env.KV.get(attendance_key)) !== null) {
+			console.debug('[*] すでに出席済みです。');
+			continue;
+		}
+
 		await c.env.KV.put(attendance_key, 'true');
 	}
 

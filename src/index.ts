@@ -1199,46 +1199,49 @@ app_hono.post('/attendances-endpoint', async (c) => {
 		},
 	});
 
-	const { device_ids } = await c.req.json<{
+	const { device_ids, lesson_uuid } = await c.req.json<{
+		lesson_uuid: string;
 		device_ids: string[];
 	}>();
 
-	// 開講している授業を取得する
-	const lesson_list = await db.query.lesson.findMany({
-		where: eq(lesson.status, 1),
+	// 指定された授業が存在するかを確認する
+	const lesson_detail = await db.query.lesson.findFirst({
+		where: eq(lesson.lesson_uuid, lesson_uuid),
 		columns: {
-			lesson_uuid: true,
+			status: true,
 		},
 	});
 
-	// 開講している授業がなければエラーを返す
-	if (lesson_list.length === 0) {
-		console.error('[!] 開講している授業がありません。');
+	if (!lesson_detail) {
+		console.debug('[!] 授業が存在しません。');
 		return c.json(
 			{
-				error: '開講している授業がありません',
+				error: '授業が存在しません',
 			},
 			404
 		);
 	}
 
-	console.debug('[*] 開講している授業のリスト', lesson_list);
+	// 授業が開講中でない場合はエラーを返す
+	if (lesson_detail.status !== 1) {
+		console.debug('[!] 授業が開講中ではありません。');
+		return c.json(
+			{
+				error: '授業が開講中ではありません',
+			},
+			403
+		);
+	}
 
-	// 開講している授業が複数あればそれぞれに対して出席状況を更新する
-	for (const lesson of lesson_list) {
-		// 授業のUUIDを取得する
-		const lesson_uuid = lesson.lesson_uuid;
+	console.debug('[*] 授業のUUID', lesson_uuid);
 
-		console.debug('[*] 授業のUUID', lesson_uuid);
+	console.debug('[*] デバイスIDのリスト', device_ids);
 
-		console.debug('[*] デバイスIDのリスト', device_ids);
-
-		// それぞれに対してkvストアを更新する
-		for (const device_id of device_ids) {
-			const attendance_key = `attendance:${lesson_uuid}:${device_id}`;
-			console.debug('[*] 出席情報のキー', attendance_key);
-			await c.env.KV.put(attendance_key, 'true');
-		}
+	// それぞれに対してkvストアを更新する
+	for (const device_id of device_ids) {
+		const attendance_key = `attendance:${lesson_uuid}:${device_id}`;
+		console.debug('[*] 出席情報のキー', attendance_key);
+		await c.env.KV.put(attendance_key, 'true');
 	}
 
 	return c.json(

@@ -12,5 +12,5 @@ database_id = "af8fdeea-d678-4c4d-bef8-4d3612fd550f"
 binding = "KV"
 id = "0353bc1ada254815a5c8f697e87d7284"
 
-[triggers]
-crons = ["*/1 * * * *"]
+# [triggers]
+crons = ["* * * * *"]

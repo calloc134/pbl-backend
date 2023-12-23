@@ -18,7 +18,7 @@
 		"@types/bcryptjs": "^2.4.6",
 		"bcryptjs": "^2.4.3",
 		"drizzle-orm": "^0.29.0",
-		"hono": "^3.10.2",
+		"hono": "^3.11.7",
 		"ulidx": "^2.2.1"
 	}
 }
